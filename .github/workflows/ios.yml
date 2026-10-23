@@ -63,7 +63,9 @@ jobs:
           cd iosApp && xcodegen generate
 
       - name: Build for device, unsigned
+        shell: bash
         run: |
+          mkdir -p build
           xcodebuild build \
             -project iosApp/BitChord.xcodeproj \
             -scheme BitChord \
@@ -71,7 +73,17 @@ jobs:
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/xcode \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          # Compiler and linker errors as annotations, so they show on the PR
+          # without opening a 10,000-line log.
+          if [ "$status" -ne 0 ]; then
+            grep -E '(^e: |error:|Undefined symbol|ld: )' build/xcodebuild.log \
+              | grep -v 'Compilation finished with errors' | sort -u | head -40 \
+              | while IFS= read -r line; do echo "::error::$line"; done
+          fi
+          exit "$status"
 
       - name: Package the IPA
         run: |
