@@ -40,13 +40,15 @@ kotlin {
             implementation("io.ktor:ktor-client-core:$ktor")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+            // The Compose compiler plugin runs on every target, the test-only jvm
+            // one included, and refuses to without the runtime on its classpath.
+            implementation(compose.runtime)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:$ktor")
-            implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
