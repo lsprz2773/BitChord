@@ -20,6 +20,8 @@ include(":shared")
 include(":sharedUi")
 include(":desktopUi")
 include(":desktopApp")
+// The iPhone app's Kotlin side (see iosApp/README.md).
+include(":iosKit")
 
 // The Android module only when there is an SDK to build it against. A machine
 // set up for the desktop alone has none, and including it there fails at

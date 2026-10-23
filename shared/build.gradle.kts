@@ -19,6 +19,12 @@ kotlin {
         }
     }
 
+    // iOS sees commonMain only: everything in jvmSharedMain leans on the JDK, OkHttp or
+    // NewPipe. Kotlin/Native compiles Apple targets on macOS alone; elsewhere they are
+    // skipped with a warning, so the Linux and Windows builds are unaffected.
+    iosArm64()
+    iosSimulatorArm64()
+
     // Android and desktop are both JVM, but the default hierarchy gives them no source set in
     // common.
     applyDefaultHierarchyTemplate()

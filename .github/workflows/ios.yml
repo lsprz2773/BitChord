@@ -1,0 +1,87 @@
+name: iOS
+
+# Builds an unsigned BitChord.ipa for sideloading (Sideloadly, AltStore), which
+# signs it with your own Apple ID on the way onto the phone.
+
+on:
+  push:
+    branches: [main, 'ios/**']
+    paths:
+      - 'iosKit/**'
+      - 'iosApp/**'
+      - 'shared/**'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'iosKit/**'
+      - 'iosApp/**'
+      - 'shared/**'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    name: Unsigned IPA
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Write local.properties
+        run: |
+          echo "LASTFM_API_KEY=${{ secrets.LASTFM_API_KEY }}" > local.properties
+          echo "LASTFM_SECRET=${{ secrets.LASTFM_SECRET }}" >> local.properties
+
+      - run: chmod +x gradlew
+
+      - name: Parser tests
+        run: ./gradlew :iosKit:jvmTest
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          cd iosApp && xcodegen generate
+
+      - name: Build for device, unsigned
+        run: |
+          xcodebuild build \
+            -project iosApp/BitChord.xcodeproj \
+            -scheme BitChord \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/xcode \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
+      - name: Package the IPA
+        run: |
+          mkdir -p build/ipa/Payload
+          cp -R build/xcode/Build/Products/Release-iphoneos/BitChord.app build/ipa/Payload/
+          cd build/ipa && zip -qry ../../BitChord-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BitChord-unsigned-ipa
+          path: BitChord-unsigned.ipa
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-reports
+          path: iosKit/build/reports/tests/
