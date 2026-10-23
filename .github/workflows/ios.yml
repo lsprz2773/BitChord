@@ -3,9 +3,11 @@ name: iOS
 # Builds an unsigned BitChord.ipa for sideloading (Sideloadly, AltStore), which
 # signs it with your own Apple ID on the way onto the phone.
 
+# Pushes to a PR's branch build once, through pull_request; macOS runners are
+# scarce enough that a second copy of the same build only sits in the queue.
 on:
   push:
-    branches: [main, 'ios/**']
+    branches: [main]
     paths:
       - 'iosKit/**'
       - 'iosApp/**'
@@ -30,7 +32,10 @@ concurrency:
 jobs:
   ipa:
     name: Unsigned IPA
-    runs-on: macos-15
+    # macos-latest is what Check's desktop-macos job runs on and gets scheduled;
+    # a pinned macos-15 sat unacquired until GitHub cancelled it.
+    runs-on: macos-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 

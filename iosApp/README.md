@@ -13,8 +13,8 @@ of the phone app.
 
 ## Getting it on a phone without a Mac
 
-1. GitHub Actions runs the **iOS** workflow on every push to `ios/**` or
-   `main` (or by hand from the Actions tab) and uploads
+1. GitHub Actions runs the **iOS** workflow on every pull request that
+   touches the app, on pushes to `main`, and by hand from the Actions tab, and uploads
    `BitChord-unsigned-ipa`.
 2. Unzip it and open `BitChord-unsigned.ipa` in Sideloadly or AltStore on
    Windows. They sign it with your Apple ID and install it. A free Apple ID's
